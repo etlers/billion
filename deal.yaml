@@ -1,5 +1,5 @@
 # 거래를 이어갈 파일 명칭
-txt_name: "deal.txt"
+txt_filename: "./txt/deal.txt"
 # 지갑. 거래 시작 금액
 possesion: 3000000
 # 매도 기준이 되는 수익률

@@ -2,16 +2,16 @@ import random, os, yaml, time
 import pandas as pd
 from datetime import datetime
 
-now = datetime.now() # current date and time
-run_hms = now.strftime("%H%M%S")
-date_time = now.strftime("%m/%d/%Y, %H:%M:%S")
-
+# current date and time
+now = datetime.now()
+run_date = now.strftime("%Y%m%d")
+# 전체 거래내역 저장 리스트
 list_deal_history = []
 # 설정 값 불러오기
 with open('deal.yaml', encoding='utf-8') as stream:
     deal_info = yaml.safe_load(stream)
 # 거래를 이어갈 파일 명칭
-txt_name = deal_info["txt_name"]
+txt_filename = deal_info["txt_filename"]
 # 최초 지갑
 possesion = deal_info["possesion"]
 # 매도 기준이 되는 수익률
@@ -28,7 +28,7 @@ stop_hms = deal_info["run_hms"]["stop_hms"]
 
 # 전 거래내역 저장
 def close_data(in_param):
-    f = open(txt_name, "w")
+    f = open(txt_filename, "w")
     f.write(in_param)
     f.close()
 
@@ -51,7 +51,7 @@ def send_deal(div, deal_qty):
 def execute(day_cnt):
     # 파일에 존재하는 경우 즉, 어제 매도가 안된 경우 매도를 위한 내역 추출
     try:
-        f = open(txt_name, "r")
+        f = open(txt_filename, "r")
         data = f.read()
         last_price = int(data.split(" ")[0])
         buysell_qty = int(data.split(" ")[1])
@@ -59,7 +59,7 @@ def execute(day_cnt):
         f.close()
     # 어제 마지막에 매도까지 한 경우
     except:
-        last_price = 27675
+        last_price = 27755
         buysell_qty = 0
         deal_amount = possesion
 
@@ -157,10 +157,11 @@ for idx in range(120):
     profit_total += profit
     print(str(idx + 1).zfill(3) + " Day", profit_total, deal_amount, str(round(round(profit_total / possesion, 4) * 100, 2)) + "%", deal_cnt)
 # 사용했던 파일 삭제    
-os.remove(txt_name)
+os.remove(txt_filename)
 # 거래내역 CSV 파일로 저장
 list_cols = [
     "Days", "DIV", "Bought", "Qty", "Profit"
 ]
 df_deal = pd.DataFrame(list_deal_history, columns=list_cols)
-df_deal.to_csv("deal_result.csv", index=False)
+csv_filename = "./csv/deal_history_" + run_date + ".csv"
+df_deal.to_csv(csv_filename, index=False)
