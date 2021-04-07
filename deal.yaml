@@ -1,7 +1,7 @@
 # 거래를 이어갈 파일 명칭
 txt_filename: "./txt/deal.txt"
 # 지갑. 거래 시작 금액
-possesion: 3000000
+possesion: 1000000
 # 매도 기준이 되는 수익률
 profit_rate: 0.012
 # 매수 기준이 되는 거래 틱 정보

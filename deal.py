@@ -49,6 +49,22 @@ def send_deal(div, deal_qty):
 
 # 실제 거래
 def execute(day_cnt):
+    
+    # 최저, 최고 가격 설정
+    def set_high_low_price(now_price, low_price, high_price):
+        # 최초는 그대로 설정
+        if (low_price == 0 and high_price == 0):
+            low_price = now_price
+            high_price = now_price
+        # 최초가 아닌경우 처리
+        else:
+            if low_price > now_price:
+                low_price = now_price
+            if high_price < now_price:
+                high_price = now_price
+        
+        return low_price, high_price
+
     # 파일에 존재하는 경우 즉, 어제 매도가 안된 경우 매도를 위한 내역 추출
     try:
         f = open(txt_filename, "r")
@@ -73,6 +89,8 @@ def execute(day_cnt):
     day_profit = 0
     deal_cnt = 0
     bought_price = 0
+    high_price = 0
+    low_price = 0
     sell_price = 0
     div = 1
     idx = 0
@@ -97,6 +115,9 @@ def execute(day_cnt):
     #     # 대기
     #     time.sleep(wait_sec)
     for now_price in list_price:
+        # 최고, 최저 가격 설정
+        # 마감 15분 전부터 매도인 경우 최고가보다 크면 매도 매수인 경우는 최저가보다 작으면 매수
+        low_price, high_price = set_high_low_price(now_price, low_price, high_price)
         # 매도까지 끝난 경우의 종가
         end_price = now_price
         list_deal = []
@@ -114,6 +135,9 @@ def execute(day_cnt):
                 list_deal.append(now_price)
                 list_deal.append(buysell_qty)
                 list_deal.append(0)
+                list_deal.append(low_price)
+                list_deal.append(high_price)
+                list_deal.append(high_price - low_price)
                 deal_cnt += 1
                 div = 2
                 bought_price = now_price
@@ -128,6 +152,9 @@ def execute(day_cnt):
                 list_deal.append(now_price)
                 list_deal.append(buysell_qty)
                 list_deal.append(day_profit)
+                list_deal.append(low_price)
+                list_deal.append(high_price)
+                list_deal.append(high_price - low_price)
                 deal_cnt += 1
                 div = 1
                 last_price = bought_price
@@ -152,7 +179,7 @@ print("#" * 50)
 # 전체 수익
 profit_total = 0
 # 일별 수행 및 결과 출력
-for idx in range(120):
+for idx in range(20):
     profit, deal_cnt, deal_amount = execute(idx)
     profit_total += profit
     print(str(idx + 1).zfill(3) + " Day", profit_total, deal_amount, str(round(round(profit_total / possesion, 4) * 100, 2)) + "%", deal_cnt)
@@ -160,7 +187,7 @@ for idx in range(120):
 os.remove(txt_filename)
 # 거래내역 CSV 파일로 저장
 list_cols = [
-    "Days", "DIV", "Bought", "Qty", "Profit"
+    "Days", "DIV", "Bought", "Qty", "Profit", "Low", "High", "Gap"
 ]
 df_deal = pd.DataFrame(list_deal_history, columns=list_cols)
 csv_filename = "./csv/deal_history_" + run_date + ".csv"
