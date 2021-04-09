@@ -1,10 +1,11 @@
 import random, os, yaml, time
 import pandas as pd
-from datetime import datetime
+import numpy as np
+import datetime
 
 # current date and time
-now = datetime.now()
-run_date = now.strftime("%Y%m%d")
+now = datetime.datetime.now()
+run_date = now - datetime.timedelta(days=7)
 # 전체 거래내역 저장 리스트
 list_deal_history = []
 # 설정 값 불러오기
@@ -25,6 +26,9 @@ wait_sec = deal_info["wait_sec"]
 # 수행시간
 start_hms = deal_info["run_hms"]["start_hms"]
 stop_hms = deal_info["run_hms"]["stop_hms"]
+# 가격리스트 데이터 프레임 생성
+df_price = pd.read_csv("./csv/agreement.csv")
+df_price = df_price.sort_values(by=["date","time"])
 
 # 전 거래내역 저장
 def close_data(in_param):
@@ -65,6 +69,13 @@ def execute(day_cnt):
         
         return low_price, high_price
 
+    # 시물레이션을 위한 가격리스트 생성
+    now_dt = (run_date + datetime.timedelta(days=day_cnt)).strftime("%Y%m%d")
+    print(now_dt)
+    df_date = df_price.loc[df_price["date"].astype(str) == now_dt]    
+    list_price = list(np.array(df_date["price"].tolist()))    
+    if len(list_price) == 0: 
+        return False, 0, 0, 0
     # 파일에 존재하는 경우 즉, 어제 매도가 안된 경우 매도를 위한 내역 추출
     try:
         f = open(txt_filename, "r")
@@ -75,16 +86,15 @@ def execute(day_cnt):
         f.close()
     # 어제 마지막에 매도까지 한 경우
     except:
-        last_price = 27755
+        last_price = list_price[0]
         buysell_qty = 0
         deal_amount = possesion
 
-    list_price = []    
-    std_price = last_price
-    # 일 4천번 정도 거래내역이 있다고 가정. 추후 실시간 긁어오는 값으로 대체
-    for _ in range(4000):
-        std_price = std_price + random.randint(-2, 2) * 5
-        list_price.append(std_price)
+    # std_price = last_price
+    # # 일 4천번 정도 거래내역이 있다고 가정. 추후 실시간 긁어오는 값으로 대체
+    # for _ in range(4000):
+    #     std_price = std_price + random.randint(-2, 2) * 5
+    #     list_price.append(std_price)
     # 초기값 설정
     day_profit = 0
     deal_cnt = 0
@@ -102,7 +112,7 @@ def execute(day_cnt):
     # 현재가 추출
     # 지정한 시간 동안 수행
     # while True:
-    #     now = datetime.now() # current date and time
+    #     now = datetime.datetime.now() # current date and time
     #     run_hms = now.strftime("%H%M%S")
     #     # 시작 전이면 대기 메세지 출력하면서 대기
     #     if run_hms < start_hms:
@@ -171,7 +181,7 @@ def execute(day_cnt):
     else:
         close_data(str(end_price) + " " + "0" + " " + str(deal_amount + day_profit))
     # 일 거래내역 회신
-    return day_profit, deal_cnt, deal_amount
+    return True, day_profit, deal_cnt, deal_amount
 # 헤더 출력
 print("#" * 50)
 print("Day ", "Profit ", "deal ", " Rate", " Deal")
@@ -179,8 +189,9 @@ print("#" * 50)
 # 전체 수익
 profit_total = 0
 # 일별 수행 및 결과 출력
-for idx in range(20):
-    profit, deal_cnt, deal_amount = execute(idx)
+for idx in range(7):
+    run_tf, profit, deal_cnt, deal_amount = execute(idx)
+    if run_tf == False: continue
     profit_total += profit
     print(str(idx + 1).zfill(3) + " Day", profit_total, deal_amount, str(round(round(profit_total / possesion, 4) * 100, 2)) + "%", deal_cnt)
 # 사용했던 파일 삭제    
@@ -190,5 +201,5 @@ list_cols = [
     "Days", "DIV", "Bought", "Qty", "Profit", "Low", "High", "Gap"
 ]
 df_deal = pd.DataFrame(list_deal_history, columns=list_cols)
-csv_filename = "./csv/deal_history_" + run_date + ".csv"
+csv_filename = "./csv/deal_history_" + run_date.strftime("%Y%m%d") + ".csv"
 df_deal.to_csv(csv_filename, index=False)

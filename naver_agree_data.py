@@ -14,14 +14,16 @@ import pandas as pd
 # 환경파일
 import yaml
 
-# CSV 파일명
-csv_filename = "agreement.csv"
+# 당일
+now_dtm = datetime.datetime.now()
 # 시작일자
-start_dt = "20210406"
+start_dt = (now_dtm - datetime.timedelta(days=7)).strftime("%Y%m%d")
 # 종료일자
-end_dt = "20210408"
+end_dt = now_dtm.strftime("%Y%m%d")
 # 날짜형 시작일자
 dtm_start = datetime.datetime.strptime(start_dt, "%Y%m%d")
+# CSV 파일명
+csv_filename = "./csv/agreement_" + end_dt + ".csv"
 # 최종 데이터 리스트
 list_agree = []
 # 날짜 증가를 위한 변수
@@ -31,6 +33,7 @@ while True:
     dtm_dt = dtm_start + datetime.timedelta(days=icnt)
     dt = dtm_dt.strftime("%Y%m%d")
     if dt > end_dt: break
+    print(dt)
     last_tf = False
     for pages in range(50):
         # 0 페이지는 없어서 스킵
@@ -52,8 +55,8 @@ while True:
                 list_data = []
                 agree_time = str_href.replace("</span></td>", "").replace('<td align="center"><span class="tah p10 gray03">', "").replace(":", "").zfill(4)
                 num = idx + 1
-                list_data.append(dt)
-                list_data.append(agree_time)
+                list_data.append(str(dt))
+                list_data.append(str(agree_time))
                 if agree_time == "0900":
                     last_tf = True
             # price
